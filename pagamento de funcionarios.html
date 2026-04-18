@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pagamento da Equipe</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f5f5f0;color:#1a1a18;min-height:100vh;padding:1.5rem 1rem}
+.container{max-width:1400px;margin:0 auto}
+h1{font-size:18px;font-weight:600;margin-bottom:1.2rem;color:#1a1a18;display:flex;align-items:center;gap:10px}
+.save-badge{font-size:10px;font-weight:500;padding:3px 8px;border-radius:20px;background:#e6f7f1;color:#0F6E56;border:1px solid #b2e4d4;transition:all .3s}
+.save-badge.saving{background:#fff8e1;color:#b07d00;border-color:#f5d87a}
+
+.config-bar{background:#fff;border:1px solid #e8e8e2;border-radius:10px;padding:12px 16px;margin-bottom:1rem;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.config-group{display:flex;align-items:center;gap:8px}
+.config-group label{font-size:12px;color:#888780}
+.config-group input[type=number]{width:80px;padding:4px 8px;border-radius:6px;border:1px solid #d3d1c7;background:#fafaf7;color:#1a1a18;font-size:13px;outline:none}
+.config-group input:focus{border-color:#1D9E75}
+.btn{font-size:12px;padding:5px 14px;cursor:pointer;border-radius:7px;border:1px solid #d3d1c7;background:#fff;color:#5f5e5a;transition:background .15s}
+.btn:hover{background:#f1f0ea}
+.btn-green{background:#1D9E75;color:#fff;border-color:#1D9E75}
+.btn-green:hover{background:#178f68}
+.btn-danger{border-color:#f5c0c0;color:#c0392b}
+.btn-danger:hover{background:#fff0f0}
+
+.period-bar{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+.period-bar span{font-size:12px;color:#888780;margin-right:4px}
+.period-btn{font-size:12px;padding:4px 12px;cursor:pointer;border-radius:20px;border:1px solid #d3d1c7;background:#fff;color:#5f5e5a;transition:all .15s}
+.period-btn.active{background:#1D9E75;color:#fff;border-color:#1D9E75}
+.period-btn:hover:not(.active){background:#f1f0ea}
+
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.2rem}
+.metric{background:#fff;border-radius:8px;border:1px solid #e8e8e2;padding:11px 14px}
+.metric-label{font-size:10px;color:#888780;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
+.metric-value{font-size:19px;font-weight:600;color:#1a1a18}
+.metric-value.green{color:#0F6E56}
+.metric-sub{font-size:10px;color:#b4b2a9;margin-top:2px}
+
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid #e8e8e2;background:#fff}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{font-size:10px;font-weight:500;color:#888780;text-align:center;padding:7px 2px;border-bottom:1px solid #e8e8e2;background:#fafaf7;position:sticky;top:0;white-space:nowrap}
+thead th.th-left{text-align:left;padding-left:10px}
+thead th.th-pix{text-align:left;padding-left:6px;color:#1D9E75}
+thead th.week-sep{border-left:2px solid #e8e8e2}
+thead th.th-valor{color:#e07b00}
+thead th.th-obs{text-align:left;padding-left:6px;color:#6c63cc}
+.col-name{width:90px;min-width:80px}
+.col-pix{width:100px;min-width:80px}
+.col-valor{width:70px;min-width:60px}
+.col-obs{width:130px;min-width:110px}
+.col-day{width:26px}
+.col-tot{width:50px}
+tbody td{text-align:center;padding:4px 2px;border-bottom:1px solid #f1f0ea;vertical-align:middle}
+tbody td.td-left{text-align:left;padding-left:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;max-width:90px}
+tbody tr:hover td{background:#f9f9f5}
+.name-input,.pix-input,.obs-input,.valor-input{font-size:11px;font-family:inherit;border:none;border-bottom:1.5px solid #1D9E75;outline:none;background:transparent;color:#1a1a18}
+.name-input{width:78px}
+.pix-input{width:88px}
+.obs-input{width:118px}
+.valor-input{width:58px;border-bottom-color:#e07b00;text-align:right}
+td.editing{background:#f0faf6!important}
+td.editing-obs{background:#f5f3ff!important}
+td.editing-valor{background:#fff8ee!important}
+.pix-cell{text-align:left!important;padding-left:6px!important;cursor:pointer;color:#c8c5bc;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px}
+.pix-cell.has-pix{color:#0F6E56;font-weight:500}
+.obs-cell{text-align:left!important;padding-left:6px!important;cursor:pointer;color:#c8c5bc;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
+.obs-cell.has-obs{color:#4a4580;font-weight:400}
+.valor-cell{cursor:pointer;font-size:11px;color:#e07b00;font-weight:600}
+.valor-cell.default-valor{color:#b4b2a9;font-weight:400}
+.day-check{width:14px;height:14px;cursor:pointer;accent-color:#1D9E75}
+.week-sep-td{border-left:2px solid #e8e8e2!important}
+.total-cell{font-weight:600;color:#0F6E56}
+.dias-cell{font-weight:500;color:#555}
+tfoot td{font-size:11px;font-weight:500;color:#888780;text-align:center;padding:6px 2px;border-top:2px solid #e8e8e2;background:#fafaf7}
+tfoot td.td-left{text-align:left;padding-left:10px}
+tfoot .grand{color:#0F6E56;font-size:12px;font-weight:700}
+
+.period-summary{background:#fff;border:1px solid #e8e8e2;border-radius:10px;margin-top:1rem;overflow:hidden}
+.period-summary h2{font-size:13px;font-weight:600;padding:10px 14px;border-bottom:1px solid #e8e8e2;color:#1a1a18;background:#fafaf7}
+.ps-table{width:100%;border-collapse:collapse;font-size:12px}
+.ps-table th{font-size:10px;color:#888780;text-align:left;padding:7px 12px;border-bottom:1px solid #e8e8e2;background:#fafaf7;text-transform:uppercase;letter-spacing:.04em}
+.ps-table td{padding:6px 12px;border-bottom:1px solid #f5f5f0;font-size:12px}
+.ps-table tr:last-child td{border-bottom:none}
+.ps-table .tot-col{text-align:right;font-weight:600;color:#0F6E56}
+.ps-table .dias-col{text-align:right;color:#888780}
+.bar-wrap{width:120px;height:6px;background:#e8e8e2;border-radius:3px;display:inline-block;vertical-align:middle;margin-left:6px}
+.bar-fill{height:6px;background:#1D9E75;border-radius:3px;transition:width .3s}
+.note{font-size:11px;color:#b4b2a9;margin-top:1rem;text-align:center}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>💰 Pagamento da Equipe <span class="save-badge" id="saveBadge">✓ Salvo</span></h1>
+
+  <div class="config-bar">
+    <div class="config-group"><label>Pessoas:</label>
+      <input type="number" id="numPessoas" value="15" min="1" max="20" step="1">
+    </div>
+    <div class="config-group"><label>Valor padrão/dia: R$</label>
+      <input type="number" id="valorDia" value="130" min="1" step="1">
+    </div>
+    <div class="config-group"><label>Dias no período:</label>
+      <input type="number" id="numDias" value="26" min="1" max="31" step="1">
+    </div>
+    <button class="btn btn-green" onclick="buildTable()">Atualizar</button>
+    <button class="btn" onclick="resetChecks()">Limpar marcações</button>
+    <button class="btn btn-danger" onclick="resetAll()">Apagar tudo</button>
+    <button class="btn" onclick="exportPDF()" style="margin-left:auto">📄 Exportar PDF</button>
+  </div>
+
+  <div class="period-bar">
+    <span>Ver período:</span>
+    <button class="period-btn active" data-period="all" onclick="setPeriod('all',this)">Todos os dias</button>
+    <button class="period-btn" data-period="1" onclick="setPeriod('1',this)">Semana 1 (1–7)</button>
+    <button class="period-btn" data-period="2" onclick="setPeriod('2',this)">Semana 2 (8–14)</button>
+    <button class="period-btn" data-period="3" onclick="setPeriod('3',this)">Semana 3 (15–21)</button>
+    <button class="period-btn" data-period="4" onclick="setPeriod('4',this)">Semana 4 (22–)</button>
+  </div>
+
+  <div class="summary">
+    <div class="metric"><div class="metric-label">Total a pagar</div><div class="metric-value green" id="sumTotal">R$ 0</div><div class="metric-sub" id="subPeriod">período completo</div></div>
+    <div class="metric"><div class="metric-label">Dias marcados</div><div class="metric-value" id="sumDias">0</div><div class="metric-sub" id="subDiasDetail"></div></div>
+    <div class="metric"><div class="metric-label">Maior salário</div><div class="metric-value" id="maxSal">R$ 0</div><div class="metric-sub" id="maxName">—</div></div>
+    <div class="metric"><div class="metric-label">Média por pessoa</div><div class="metric-value" id="mediaSal">R$ 0</div><div class="metric-sub">no período</div></div>
+    <div class="metric"><div class="metric-label">Menor salário</div><div class="metric-value" id="minSal">R$ 0</div><div class="metric-sub" id="minName">—</div></div>
+  </div>
+
+  <div class="table-wrap">
+    <table id="tabela">
+      <thead id="thead"></thead>
+      <tbody id="tbody"></tbody>
+      <tfoot id="tfoot"></tfoot>
+    </table>
+  </div>
+
+  <div class="period-summary">
+    <h2>📊 Totalizador por Semana</h2>
+    <table class="ps-table">
+      <thead><tr>
+        <th>Período</th><th>Dias</th>
+        <th style="text-align:right">Total (equipe)</th>
+        <th style="text-align:right">Média/pessoa</th>
+        <th style="width:160px">Proporção</th>
+      </tr></thead>
+      <tbody id="ps-body"></tbody>
+    </table>
+  </div>
+
+  <p class="note">Clique no nome, pix, valor/dia ou observação para editar · Marque os dias trabalhados · Dados salvos automaticamente</p>
+</div>
+
+<script>
+var NUM_MAX=20;
+var nomes=[],pixes=[],checks={},obs=[],valoresDia=[];
+var currentPeriod='all';
+var STORAGE_KEY='pagamento_equipe_v2';
+var saveTimer=null;
+
+// ── PERSISTÊNCIA ──────────────────────────────────────────
+async function saveData(){
+  var badge=document.getElementById('saveBadge');
+  badge.textContent='⏳ Salvando…';badge.className='save-badge saving';
+  var state={
+    nomes,pixes,checks,obs,valoresDia,
+    numPessoas:document.getElementById('numPessoas').value,
+    valorDia:document.getElementById('valorDia').value,
+    numDias:document.getElementById('numDias').value
+  };
+  try{
+    await window.storage.set(STORAGE_KEY,JSON.stringify(state));
+    badge.textContent='✓ Salvo';badge.className='save-badge';
+  }catch(e){badge.textContent='⚠ Erro';badge.className='save-badge saving';}
+}
+function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(saveData,600);}
+
+async function loadData(){
+  try{
+    var r=await window.storage.get(STORAGE_KEY);
+    if(r&&r.value){
+      var s=JSON.parse(r.value);
+      nomes=s.nomes||[];pixes=s.pixes||[];checks=s.checks||{};
+      obs=s.obs||[];valoresDia=s.valoresDia||[];
+      if(s.numPessoas)document.getElementById('numPessoas').value=s.numPessoas;
+      if(s.valorDia)document.getElementById('valorDia').value=s.valorDia;
+      if(s.numDias)document.getElementById('numDias').value=s.numDias;
+    }
+  }catch(e){}
+  buildTable();
+}
+
+// ── HELPERS ───────────────────────────────────────────────
+function getKey(p,d){return p+'_'+d;}
+function semana(d){return d<=7?1:d<=14?2:d<=21?3:4;}
+function inPeriod(d){return currentPeriod==='all'||semana(d)===parseInt(currentPeriod);}
+function periodRange(){
+  var nd=parseInt(document.getElementById('numDias').value)||26;
+  if(currentPeriod==='all')return{s:1,e:nd};
+  var s=[0,1,8,15,22][parseInt(currentPeriod)];
+  var e=[0,7,14,21,nd][parseInt(currentPeriod)];
+  return{s,e:Math.min(e,nd)};
+}
+function getValorPessoa(pi){
+  var def=parseInt(document.getElementById('valorDia').value)||130;
+  return(valoresDia[pi]!=null&&valoresDia[pi]!=='')?parseInt(valoresDia[pi]):def;
+}
+
+function setPeriod(p,btn){
+  currentPeriod=p;
+  document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  var nd=parseInt(document.getElementById('numDias').value)||26;
+  for(var d=1;d<=nd;d++){
+    var show=inPeriod(d);
+    document.querySelectorAll('[data-day="'+d+'"]').forEach(el=>el.style.display=show?'':'none');
+  }
+  updateSums();
+}
+
+// ── EDIÇÃO NOME ───────────────────────────────────────────
+function editName(pi){
+  var cell=document.getElementById('namecell_'+pi);
+  if(cell.querySelector('input'))return;
+  var cur=nomes[pi];cell.classList.add('editing');
+  cell.innerHTML='<input class="name-input" id="ni_'+pi+'" value="'+cur+'" maxlength="18">';
+  var inp=document.getElementById('ni_'+pi);inp.focus();inp.select();
+  function save(){var v=inp.value.trim()||cur;nomes[pi]=v;cell.classList.remove('editing');cell.textContent=v;scheduleSave();}
+  inp.addEventListener('blur',save);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.value=cur;inp.blur();}});
+}
+
+// ── EDIÇÃO PIX ────────────────────────────────────────────
+function editPix(pi){
+  var cell=document.getElementById('pixcell_'+pi);
+  if(cell.querySelector('input'))return;
+  var cur=pixes[pi];cell.classList.add('editing');
+  cell.innerHTML='<input class="pix-input" id="pxi_'+pi+'" value="'+cur+'" maxlength="60" placeholder="CPF, e-mail ou tel.">';
+  var inp=document.getElementById('pxi_'+pi);inp.focus();inp.select();
+  function save(){
+    var v=inp.value.trim();pixes[pi]=v;cell.classList.remove('editing');
+    if(v){cell.className='pix-cell has-pix';cell.textContent=v;cell.title=v;}
+    else{cell.className='pix-cell';cell.textContent='+ pix';cell.title='Adicionar chave pix';}
+    scheduleSave();
+  }
+  inp.addEventListener('blur',save);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.value=cur;inp.blur();}});
+}
+
+// ── EDIÇÃO VALOR/DIA INDIVIDUAL ───────────────────────────
+function editValor(pi){
+  var cell=document.getElementById('valorcell_'+pi);
+  if(cell.querySelector('input'))return;
+  var def=parseInt(document.getElementById('valorDia').value)||130;
+  var cur=valoresDia[pi]!=null&&valoresDia[pi]!==''?valoresDia[pi]:def;
+  cell.classList.add('editing-valor');
+  cell.innerHTML='<input class="valor-input" id="vi_'+pi+'" type="number" value="'+cur+'" min="1" max="99999">';
+  var inp=document.getElementById('vi_'+pi);inp.focus();inp.select();
+  function save(){
+    var v=parseInt(inp.value);
+    if(!v||isNaN(v))v=def;
+    valoresDia[pi]=(v===def?'':v);
+    cell.classList.remove('editing-valor');
+    renderValorCell(pi);
+    updateSums();scheduleSave();
+  }
+  inp.addEventListener('blur',save);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.value=cur;inp.blur();}});
+}
+function renderValorCell(pi){
+  var cell=document.getElementById('valorcell_'+pi);
+  var def=parseInt(document.getElementById('valorDia').value)||130;
+  var v=valoresDia[pi]!=null&&valoresDia[pi]!==''?parseInt(valoresDia[pi]):def;
+  var isCustom=valoresDia[pi]!=null&&valoresDia[pi]!=='';
+  cell.className='valor-cell'+(isCustom?'':' default-valor');
+  cell.title='Clique para editar valor/dia';
+  cell.textContent='R$ '+v;
+}
+
+// ── EDIÇÃO OBSERVAÇÃO ─────────────────────────────────────
+function editObs(pi){
+  var cell=document.getElementById('obscell_'+pi);
+  if(cell.querySelector('input'))return;
+  var cur=obs[pi]||'';cell.classList.add('editing-obs');
+  cell.innerHTML='<input class="obs-input" id="oi_'+pi+'" value="'+cur.replace(/"/g,'&quot;')+'" maxlength="80" placeholder="Anotação...">';
+  var inp=document.getElementById('oi_'+pi);inp.focus();inp.select();
+  function save(){
+    var v=inp.value.trim();obs[pi]=v;cell.classList.remove('editing-obs');
+    if(v){cell.className='obs-cell has-obs';cell.textContent=v;cell.title=v;}
+    else{cell.className='obs-cell';cell.textContent='+ obs';cell.title='Adicionar observação';}
+    scheduleSave();
+  }
+  inp.addEventListener('blur',save);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.value=cur;inp.blur();}});
+}
+
+// ── CONSTRUIR TABELA ──────────────────────────────────────
+function buildTable(){
+  var np=Math.min(parseInt(document.getElementById('numPessoas').value)||15,NUM_MAX);
+  var nd=parseInt(document.getElementById('numDias').value)||26;
+
+  while(nomes.length<NUM_MAX)nomes.push('Pessoa '+(nomes.length+1));
+  while(pixes.length<NUM_MAX)pixes.push('');
+  while(obs.length<NUM_MAX)obs.push('');
+  while(valoresDia.length<NUM_MAX)valoresDia.push('');
+
+  var thead=document.getElementById('thead');
+  var tbody=document.getElementById('tbody');
+  var tfoot=document.getElementById('tfoot');
+
+  var diasSemana=['Sex','Sáb','Dom','Seg','Ter','Qua','Qui'];
+  // d=1 começa na Sexta (índice 0)
+  var hRow='<tr>'
+    +'<th class="th-left col-name">Pessoa</th>'
+    +'<th class="th-pix col-pix">Chave Pix</th>'
+    +'<th class="th-valor col-valor">Valor/dia</th>';
+  for(var d=1;d<=nd;d++){
+    var ws=d===8||d===15||d===22?'week-sep':'';
+    var label=diasSemana[(d-1)%7];
+    hRow+='<th class="col-day '+ws+'" data-day="'+d+'" title="Dia '+d+'">'+label+'</th>';
+  }
+  hRow+='<th class="col-tot">Dias</th><th class="col-tot">Total</th>'
+    +'<th class="th-obs col-obs">Observações</th>'
+    +'</tr>';
+  thead.innerHTML=hRow;
+
+  var bHtml='';
+  for(var pi=0;pi<np;pi++){
+    var pxv=pixes[pi],pxc=pxv?'pix-cell has-pix':'pix-cell',pxt=pxv||'+ pix';
+    var ov=obs[pi],oc=ov?'obs-cell has-obs':'obs-cell',ot=ov||'+ obs';
+    var def=parseInt(document.getElementById('valorDia').value)||130;
+    var vd=valoresDia[pi]!=null&&valoresDia[pi]!==''?parseInt(valoresDia[pi]):def;
+    var isCustom=valoresDia[pi]!=null&&valoresDia[pi]!=='';
+
+    bHtml+='<tr>';
+    bHtml+='<td class="td-left col-name" id="namecell_'+pi+'" onclick="editName('+pi+')">'+nomes[pi]+'</td>';
+    bHtml+='<td class="'+pxc+'" id="pixcell_'+pi+'" title="'+(pxv||'Adicionar chave pix')+'" onclick="editPix('+pi+')">'+pxt+'</td>';
+    bHtml+='<td class="valor-cell'+(isCustom?'':' default-valor')+'" id="valorcell_'+pi+'" title="Clique para editar valor/dia" onclick="editValor('+pi+')">R$ '+vd+'</td>';
+    for(var d2=1;d2<=nd;d2++){
+      var k=getKey(pi,d2);
+      var chk=checks[k]?'checked':'';
+      var ws2=d2===8||d2===15||d2===22?'week-sep-td':'';
+      bHtml+='<td class="'+ws2+'" data-day="'+d2+'"><input type="checkbox" class="day-check" data-p="'+pi+'" data-d="'+d2+'" '+chk+'></td>';
+    }
+    bHtml+='<td class="dias-cell" id="dias_'+pi+'">0</td>';
+    bHtml+='<td class="total-cell" id="tot_'+pi+'">R$ 0</td>';
+    bHtml+='<td class="'+oc+'" id="obscell_'+pi+'" title="'+(ov||'Adicionar observação')+'" onclick="editObs('+pi+')">'+ot+'</td>';
+    bHtml+='</tr>';
+  }
+  tbody.innerHTML=bHtml;
+
+  var fRow='<tr><td class="td-left">Pessoas/dia</td><td></td><td></td>';
+  for(var fd=1;fd<=nd;fd++){
+    var ws3=fd===8||fd===15||fd===22?'week-sep-td':'';
+    fRow+='<td class="'+ws3+'" id="col_'+fd+'" data-day="'+fd+'">0</td>';
+  }
+  fRow+='<td id="foot_dias">0</td><td id="foot_total" class="grand">R$ 0</td><td></td></tr>';
+  tfoot.innerHTML=fRow;
+
+  document.querySelectorAll('.day-check').forEach(cb=>{
+    cb.addEventListener('change',function(){
+      checks[getKey(parseInt(this.dataset.p),parseInt(this.dataset.d))]=this.checked;
+      updateSums();scheduleSave();
+    });
+  });
+
+  setPeriod(currentPeriod,document.querySelector('[data-period="'+currentPeriod+'"]'));
+  scheduleSave();
+}
+
+// ── ATUALIZAR SOMAS ───────────────────────────────────────
+function updateSums(){
+  var np=Math.min(parseInt(document.getElementById('numPessoas').value)||15,NUM_MAX);
+  var nd=parseInt(document.getElementById('numDias').value)||26;
+  var r=periodRange();
+  var grandDias=0,grandTotal=0,maxSal=0,minSal=Infinity,maxIdx=0,minIdx=0;
+  var colDias=new Array(nd+1).fill(0);
+  var semDias=[0,0,0,0,0],semTot=[0,0,0,0,0];
+
+  for(var pi=0;pi<np;pi++){
+    var valor=getValorPessoa(pi);
+    var pDiasPeriod=0;
+    for(var d=1;d<=nd;d++){
+      if(checks[getKey(pi,d)]){
+        colDias[d]++;
+        semDias[semana(d)]++;semTot[semana(d)]+=valor;
+        if(d>=r.s&&d<=r.e)pDiasPeriod++;
+      }
+    }
+    var pTot=pDiasPeriod*valor;
+    document.getElementById('dias_'+pi).textContent=pDiasPeriod;
+    document.getElementById('tot_'+pi).textContent='R$ '+pTot.toLocaleString('pt-BR');
+    grandDias+=pDiasPeriod;grandTotal+=pTot;
+    if(pTot>maxSal){maxSal=pTot;maxIdx=pi;}
+    if(pTot<minSal){minSal=pTot;minIdx=pi;}
+  }
+
+  for(var d2=1;d2<=nd;d2++){var el=document.getElementById('col_'+d2);if(el)el.textContent=colDias[d2];}
+  document.getElementById('foot_dias').textContent=grandDias;
+  document.getElementById('foot_total').textContent='R$ '+grandTotal.toLocaleString('pt-BR');
+  document.getElementById('sumTotal').textContent='R$ '+grandTotal.toLocaleString('pt-BR');
+  document.getElementById('sumDias').textContent=grandDias;
+  document.getElementById('subDiasDetail').textContent=np+' pessoas no período';
+  document.getElementById('maxSal').textContent='R$ '+maxSal.toLocaleString('pt-BR');
+  document.getElementById('maxName').textContent=nomes[maxIdx]||'—';
+  var media=np>0?Math.round(grandTotal/np):0;
+  document.getElementById('mediaSal').textContent='R$ '+media.toLocaleString('pt-BR');
+  document.getElementById('minSal').textContent='R$ '+(minSal===Infinity?0:minSal).toLocaleString('pt-BR');
+  document.getElementById('minName').textContent=nomes[minIdx]||'—';
+  document.getElementById('subPeriod').textContent=currentPeriod==='all'?'período completo':'semana '+currentPeriod;
+
+  var psBody=document.getElementById('ps-body');
+  var nd2=parseInt(document.getElementById('numDias').value)||26;
+  var labels=['Semana 1 (dias 1–7)','Semana 2 (dias 8–14)','Semana 3 (dias 15–21)','Semana 4 (dias 22–'+nd2+')'];
+  var maxPSTot=Math.max(...semTot.slice(1));
+  var html='',totalDiasAll=0,totalTotAll=0;
+  for(var s=1;s<=4;s++){
+    totalDiasAll+=semDias[s];totalTotAll+=semTot[s];
+    var avgS=np>0?Math.round(semTot[s]/np):0;
+    var pct=maxPSTot>0?Math.round(semTot[s]/maxPSTot*100):0;
+    html+='<tr><td>'+labels[s-1]+'</td><td class="dias-col">'+semDias[s]+'</td>'
+      +'<td class="tot-col">R$ '+semTot[s].toLocaleString('pt-BR')+'</td>'
+      +'<td class="tot-col" style="color:#888780;font-weight:400">R$ '+avgS.toLocaleString('pt-BR')+'</td>'
+      +'<td><div class="bar-wrap"><div class="bar-fill" style="width:'+pct+'%"></div></div></td></tr>';
+  }
+  html+='<tr style="font-weight:700;background:#fafaf7"><td>Total geral</td>'
+    +'<td class="dias-col">'+totalDiasAll+'</td>'
+    +'<td class="tot-col">R$ '+totalTotAll.toLocaleString('pt-BR')+'</td>'
+    +'<td class="tot-col" style="color:#888780;font-weight:400">R$ '+(np>0?Math.round(totalTotAll/np):0).toLocaleString('pt-BR')+'</td>'
+    +'<td></td></tr>';
+  psBody.innerHTML=html;
+}
+
+function resetChecks(){checks={};buildTable();}
+
+async function resetAll(){
+  if(!confirm('Apagar todos os dados? Esta ação não pode ser desfeita.'))return;
+  checks={};nomes=[];pixes=[];obs=[];valoresDia=[];
+  for(var i=0;i<NUM_MAX;i++){nomes.push('Pessoa '+(i+1));pixes.push('');obs.push('');valoresDia.push('');}
+  document.getElementById('numPessoas').value=15;
+  document.getElementById('valorDia').value=130;
+  document.getElementById('numDias').value=26;
+  try{await window.storage.delete(STORAGE_KEY);}catch(e){}
+  buildTable();
+}
+
+document.getElementById('numPessoas').addEventListener('change',()=>{buildTable();scheduleSave();});
+document.getElementById('numDias').addEventListener('change',()=>{buildTable();scheduleSave();});
+document.getElementById('valorDia').addEventListener('change',()=>{
+  var np=Math.min(parseInt(document.getElementById('numPessoas').value)||15,NUM_MAX);
+  for(var pi=0;pi<np;pi++)renderValorCell(pi);
+  updateSums();scheduleSave();
+});
+
+// ── EXPORTAR PDF ──────────────────────────────────────────
+function exportPDF(){
+  try{
+    var np=Math.min(parseInt(document.getElementById('numPessoas').value)||15,NUM_MAX);
+    var nd=parseInt(document.getElementById('numDias').value)||26;
+    var hoje=new Date().toLocaleDateString('pt-BR');
+
+    var headerDias='';
+    for(var d=1;d<=nd;d++)headerDias+='<th>'+d+'</th>';
+
+    var rows='';
+    var colTotais=new Array(nd+1).fill(0);
+    var semDias=[0,0,0,0,0],semTot=[0,0,0,0,0];
+    for(var pi=0;pi<np;pi++){
+      var valor=getValorPessoa(pi);
+      var totalDias=0,totalVal=0,cells='';
+      for(var d2=1;d2<=nd;d2++){
+        var chk=!!checks[getKey(pi,d2)];
+        if(chk){totalDias++;totalVal+=valor;colTotais[d2]++;semDias[semana(d2)]++;semTot[semana(d2)]+=valor;}
+        cells+='<td style="'+(chk?'background:#e6f7f1;color:#0F6E56;font-weight:700':'')+'">'+( chk?'✓':'' )+'</td>';
+      }
+      rows+='<tr>'
+        +'<td style="text-align:left;padding-left:6px;font-weight:600">'+nomes[pi]+'</td>'
+        +'<td style="text-align:left;padding-left:4px;color:#0F6E56;font-size:7.5px">'+(pixes[pi]||'—')+'</td>'
+        +'<td style="color:#e07b00;font-weight:600;text-align:right">R$ '+valor+'</td>'
+        +cells
+        +'<td style="color:#555">'+totalDias+'</td>'
+        +'<td style="font-weight:700;color:#0F6E56">R$ '+totalVal.toLocaleString('pt-BR')+'</td>'
+        +'<td style="text-align:left;padding-left:4px;color:#4a4580;font-size:8px;font-style:italic">'+(obs[pi]||'')+'</td>'
+        +'</tr>';
+    }
+
+    var footCols='';
+    for(var d3=1;d3<=nd;d3++)footCols+='<td>'+colTotais[d3]+'</td>';
+
+    var semLabels=['Semana 1 (1–7)','Semana 2 (8–14)','Semana 3 (15–21)','Semana 4 (22–'+nd+')'];
+    var semRows='',totalGeral=0,diasGeral=0;
+    for(var s=1;s<=4;s++){
+      totalGeral+=semTot[s];diasGeral+=semDias[s];
+      var avg=np>0?Math.round(semTot[s]/np):0;
+      semRows+='<tr>'
+        +'<td style="text-align:left;padding-left:6px">'+semLabels[s-1]+'</td>'
+        +'<td style="text-align:right;color:#555">'+semDias[s]+'</td>'
+        +'<td style="text-align:right;font-weight:700;color:#0F6E56">R$ '+semTot[s].toLocaleString('pt-BR')+'</td>'
+        +'<td style="text-align:right;color:#555">R$ '+avg.toLocaleString('pt-BR')+'</td>'
+        +'</tr>';
+    }
+    semRows+='<tr style="background:#f0faf6;border-top:2px solid #1D9E75">'
+      +'<td style="text-align:left;padding-left:6px;font-weight:700">Total geral</td>'
+      +'<td style="text-align:right;font-weight:700;color:#555">'+diasGeral+'</td>'
+      +'<td style="text-align:right;font-weight:700;color:#0F6E56">R$ '+totalGeral.toLocaleString('pt-BR')+'</td>'
+      +'<td style="text-align:right;font-weight:700;color:#555">R$ '+(np>0?Math.round(totalGeral/np):0).toLocaleString('pt-BR')+'</td>'
+      +'</tr>';
+
+    var th='background:#0F6E56;color:#fff;padding:4px 3px;text-align:center;font-size:8px;';
+    var td='padding:3px 2px;text-align:center;border-bottom:1px solid #eee;font-size:8px;';
+
+    var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Pagamento da Equipe</title>'
+      +'<style>@page{size:A4 landscape;margin:12mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:9px;color:#1a1a18}table{width:100%;border-collapse:collapse;margin-bottom:14px}th{'+th+'}td{'+td+'}tr:nth-child(even) td{background:#fafaf7}@media print{.no-print{display:none}}</style></head><body>'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #1D9E75">'
+      +'<h1 style="font-size:15px;color:#0F6E56">💰 Pagamento da Equipe</h1>'
+      +'<div style="font-size:9px;color:#888;text-align:right">Gerado em: '+hoje+'<br>'+np+' pessoas · '+nd+' dias</div>'
+      +'</div>'
+      +'<table><thead><tr>'
+      +'<th style="'+th+'text-align:left;padding-left:6px">Pessoa</th>'
+      +'<th style="'+th+'text-align:left;padding-left:4px">Chave Pix</th>'
+      +'<th style="'+th+'text-align:right;color:#ffd080">Valor/dia</th>'
+      +headerDias
+      +'<th style="'+th+'">Dias</th>'
+      +'<th style="'+th+'">Total</th>'
+      +'<th style="'+th+'text-align:left;padding-left:4px;color:#c9c3f7">Observações</th>'
+      +'</tr></thead><tbody>'+rows+'</tbody>'
+      +'<tfoot><tr style="background:#f5f5f0">'
+      +'<td style="text-align:left;padding-left:6px;font-weight:700;'+td+'">Total/dia</td>'
+      +'<td style="'+td+'"></td><td style="'+td+'"></td>'+footCols
+      +'<td style="'+td+'"></td><td style="'+td+'"></td><td style="'+td+'"></td>'
+      +'</tr></tfoot></table>'
+      +'<p style="font-size:11px;font-weight:700;color:#0F6E56;margin-bottom:6px">Totalizador por Semana</p>'
+      +'<table style="width:380px"><thead><tr>'
+      +'<th style="'+th+'text-align:left;padding-left:6px">Período</th>'
+      +'<th style="'+th+'text-align:right">Dias</th>'
+      +'<th style="'+th+'text-align:right">Total equipe</th>'
+      +'<th style="'+th+'text-align:right">Média/pessoa</th>'
+      +'</tr></thead><tbody>'+semRows+'</tbody></table>'
+      +'<div class="no-print" style="margin-top:20px;text-align:center">'
+      +'<button onclick="window.print()" style="padding:8px 24px;background:#1D9E75;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">🖨️ Imprimir / Salvar PDF</button>'
+      +'</div></body></html>';
+
+    var blob=new Blob([html],{type:'text/html'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),10000);
+  }catch(err){alert('Erro ao gerar PDF: '+err.message);}
+}
+
+loadData();
+</script>
+</body>
+</html>
